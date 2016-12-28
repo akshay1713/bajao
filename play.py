@@ -8,7 +8,7 @@ import sys
 class PlayerInput(threading.Thread):
     
     def __init__(self, status):
-        print("passed argument is ", status)
+        print "passed argument is ", status
         self.status = status
         super(PlayerInput, self).__init__()
 
@@ -17,9 +17,9 @@ class PlayerInput(threading.Thread):
 
     def run(self):
         while True:
-            self.status = input('bajao>')
+            self.status = raw_input('bajao>')
             if(self.status == 'exit'):
-                print("exiting")
+                print "exiting"
                 sys.exit()
 
 
@@ -32,10 +32,10 @@ pygame.mixer.music.play(-1, 0.0)
 
 while pygame.mixer.music.get_busy():
     if(it.get_status() == 'stop'):
-        print("stopping music")
+        print "stopping music"
         pygame.mixer.music.stop()
     elif(it.get_status() == 'exit'):
-        print("exiting")
+        print "exiting"
         sys.exit()
     sleep(1)
 
