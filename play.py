@@ -1,43 +1,63 @@
-import pygame.mixer
+import pyglet,sys
 from time import sleep
-import click, cmd
-import threading
-import sys
+from cmd import Cmd
 
-
-class PlayerInput(threading.Thread):
+class MusicPlayer():
     
-    def __init__(self, status):
-        print "passed argument is ", status
-        self.status = status
-        super(PlayerInput, self).__init__()
+    def __init__(self, audio_file, action):
+        super(MusicPlayer, self).__init__()
+        self.audio_file = audio_file
+        self.player = pyglet.media.Player()
+        self.queue_song(audio_file)
 
-    def get_status(self):
-        return self.status
+    def play_music(self):
+        self.player.play()
 
-    def run(self):
-        while True:
-            self.status = raw_input('bajao>')
-            if(self.status == 'exit'):
-                print "exiting"
-                sys.exit()
+    def pause_music(self):
+        self.player.pause()
 
+    def delete_player(self):
+        self.player.delete()
 
-it = PlayerInput("\n")
-it.start()
+    def next_song(self):
+        self.player.next_source()
 
-pygame.mixer.init()
-pygame.mixer.music.load(open("Amplifier.mp3","rb"))
-pygame.mixer.music.play(-1, 0.0)
+    def queue_song(self, audio_file):
+        audio_src = pyglet.media.load(audio_file)
+        self.player.queue(audio_src)
 
-while pygame.mixer.music.get_busy():
-    if(it.get_status() == 'stop'):
-        print "stopping music"
-        pygame.mixer.music.stop()
-    elif(it.get_status() == 'exit'):
-        print "exiting"
+class PlayerPrompt(Cmd):
+    
+    def __init__(self, music_player):
+        print(music_player)
+        super(PlayerPrompt, self).__init__()
+        self.music_player = music_player
+
+    def do_play(self, args):
+        """Start Playing Music"""
+        self.music_player.play_music()
+
+    def do_pause(self, args):
+        """Pause current song"""
+        self.music_player.pause_music()
+
+    def do_exit(self, args):
+        """Exit Bajao Music Player"""
+        self.music_player.delete_player()
         sys.exit()
-    sleep(1)
 
+    def do_add_songs(self, args):
+        """Add songs to current player queue"""
+        self.music_player.queue_song(args)
 
+    def do_next(self, args):
+        """Play next song in queue, skip current one"""
+        self.music_player.next_song()
+        
+
+pm = MusicPlayer("Amplifier.mp3", "play")
+while True:
+     player_prompt = PlayerPrompt(pm)
+     player_prompt.prompt = "bajao>"
+     player_prompt.cmdloop("Starting Bajao Music Player")
 
