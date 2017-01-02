@@ -19,7 +19,7 @@ class MusicLibrary():
                     print("The song "+os.path.basename(abs_song_path) +" already exists in the database")
                     continue
                 unique_song_hash = exists_check_result["uniqueid"]
-                print("inserting "+abs_song_path)
+                print("Adding  "+abs_song_path+" to the Music Library")
                 cursor.execute("INSERT INTO MusicFiles(full_name, uniqueid) values(?, ?)", (abs_song_path, unique_song_hash))
 
     def check_if_exists(self, uniqueid, abs_song_path):

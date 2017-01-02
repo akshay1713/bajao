@@ -1,10 +1,7 @@
 from player import MusicPlayer, PlayerPrompt
 from music_library import MusicLibrary
-import os, argparse
+import os, argparse, glob, sys, yaml
 from time import sleep
-import glob, sys
-
-import yaml
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-a', '--action', default='start', help = "start - Start Bajao Music Player \nadd - Add Files in a directory to Bajao Music Library. To be used along with the 'dir' argument")
@@ -25,6 +22,8 @@ elif args.action == "add":
         print("Please specify a valid directory using the -dir option")
         sys.exit()
 
-    mp3_files = glob.glob(args.dir+"/*.mp3")
-    music_library = MusicLibrary("bajao.db")
-    music_library.add_to_library(mp3_files) 
+    with open("config.yaml", "r") as config_ptr:
+        config = yaml.load(config_ptr)
+        mp3_files = glob.glob(args.dir+"/*.mp3")
+        music_library = MusicLibrary(config["BAJAO_DB"])
+        music_library.add_to_library(mp3_files) 
