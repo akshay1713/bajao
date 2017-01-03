@@ -1,6 +1,6 @@
 from cmd import Cmd
 import pyglet, os, sys
-import os, argparse
+import os, argparse, random
 from time import sleep
 
 import yaml
@@ -16,34 +16,35 @@ class MusicPlayer():
     def play_music(self):
         self.player.play()
         self.current_action = "playing"
-        print()
 
     def pause_music(self):
         self.player.pause()
         self.current_action = "paused"
 
-    def delete_player(self):
-        self.player.delete()
-
     def next_song(self):
         self.player.next_source()
+        self.current_queue.pop(0)
 
     def queue_song(self, audio_file):
         audio_src = pyglet.media.load(audio_file)
         self.player.queue(audio_src)
-        print(self.player)
-        self.current_queue.append(audio_file)
+        self.current_queue.append(os.path.basename(audio_file))
 
     def list_queue(self):
         for song in self.current_queue:
             print(song)
 
+    def restart_player(self):
+        self.player.delete()
+        self.player = pyglet.media.Player()
+        self.current_queue = []
+
 class PlayerPrompt(Cmd):
 
-    def __init__(self, music_player):
-        print(music_player)
+    def __init__(self, music_player, music_library):
         super(PlayerPrompt, self).__init__()
         self.music_player = music_player
+        self.music_library = music_library
 
     def do_play(self, args):
         """Start Playing Music"""
@@ -71,3 +72,14 @@ class PlayerPrompt(Cmd):
     def do_list_queue(self, args):
         """List songs in current queue"""
         self.music_player.list_queue()
+
+    def do_delete_queue(self, args):
+        """Delete current queue, so you can create a new one"""
+        self.music_player.restart_player()
+
+    def do_shuffle(self, args):
+        """Shuffle all songs in the Music Library"""
+        songs = self.music_library.get_all_songs()
+        random.shuffle(songs)
+        for song in songs:
+            self.music_player.queue_song(song[0])
