@@ -1,5 +1,5 @@
 from cmd import Cmd
-import pyglet, os, sys
+import pyglet, os, sys, re
 import os, argparse, random
 from time import sleep
 
@@ -12,6 +12,9 @@ class MusicPlayer():
         self.player = pyglet.media.Player()
         self.current_action = action
         self.current_queue = []
+
+    def delete_player(self):
+        self.player.delete()
 
     def play_music(self):
         self.player.play()
@@ -38,6 +41,7 @@ class MusicPlayer():
         self.player.delete()
         self.player = pyglet.media.Player()
         self.current_queue = []
+        self.current_queue = "initialized"
 
 class PlayerPrompt(Cmd):
 
@@ -45,6 +49,9 @@ class PlayerPrompt(Cmd):
         super(PlayerPrompt, self).__init__()
         self.music_player = music_player
         self.music_library = music_library
+
+    def split_args(self, args):
+        return [re.sub("\"","",p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
 
     def do_play(self, args):
         """Start Playing Music"""
@@ -83,3 +90,13 @@ class PlayerPrompt(Cmd):
         random.shuffle(songs)
         for song in songs:
             self.music_player.queue_song(song[0])
+    
+    def do_create_playlist(self, args):
+        """Create a new playlist"""
+        self.music_library.create_playlist(args)
+
+    def do_add_to_playlist(self, args):
+        """Add a song to a playlist"""
+        args_list = self.split_args(args)
+        print(args_list[0], args_list[1], "are the args")
+        self.music_library.add_to_playlist(args_list[0], args_list[1])
