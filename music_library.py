@@ -80,23 +80,36 @@ class MusicLibrary():
             print("Added ", song_name, "to playlist ",playlist_name)
 
     def get_playlist_entries(self, song_name, playlist_name):
-        print(song_name)
+        if os.path.isfile(song_name):
+            base_song_name = os.path.basename(song_name)
+        else:
+            base_song_name = song_name
         playlist_entry_details = {}
         with self.conn:
             playlist_details = self.conn.execute("SELECT * from Playlists where playlist_name = (?)", [playlist_name]).fetchone()
             if not playlist_details:
+                print("Playlist named ", playlist_name," not found. Creating.")
                 playlist_entry_details["playlist_id"] = self.create_playlist(playlist_name)
             else:
-                print("Found existing playlist ", playlist_name)
                 playlist_entry_details["playlist_id"] = playlist_details[0]
-            song_details = self.conn.execute("SELECT * from MusicFiles where file_name = (?)", [song_name]).fetchone()
+            song_details = self.conn.execute("SELECT * from MusicFiles where file_name = (?)", [base_song_name]).fetchone()
             if song_details is None:
-                if not os.path.isdir(file_name):
+                if not os.path.isfile(song_name):
                     print("song ", song_name, "not found in either the music library or the path specified.")
                     return
                 print("song ", song_name, "found, adding it to Music Library before adding it to playlist.")
-                song_id_array = self.add_to_library([os.path.basename(song_name)], os.path.dirname(song_name))
+                song_id_array = self.add_to_library([base_song_name], os.path.dirname(song_name))
                 playlist_entry_details["song_id"] = song_id_array[0]
             else:
                 playlist_entry_details["song_id"] = song_details[0]
         return playlist_entry_details
+
+    def get_playlist_songs(self, playlist_name):
+        with self.conn:
+            playlist_id = self.conn.execute("SELECT id from Playlists where playlist_name = (?)", [playlist_name]).fetchone()
+            if not playlist_id:
+                print("Playlist named ", playlist_name," not found. Please create it")
+                return
+            songs = self.conn.execute("SELECT  md.directory, mf.file_name FROM MusicFiles mf join MusicDirectories md on mf.directory_id = md.id \
+                    where mf.id IN(SELECT music_id from PlaylistFiles where playlist_id = (?))", [playlist_id[0]]).fetchall()
+            return songs

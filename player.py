@@ -29,19 +29,28 @@ class MusicPlayer():
         self.current_queue.pop(0)
 
     def queue_song(self, audio_file):
+        print(audio_file)
         audio_src = pyglet.media.load(audio_file)
         self.player.queue(audio_src)
-        self.current_queue.append(os.path.basename(audio_file))
+        self.current_queue.append(audio_file)
 
     def list_queue(self):
         for song in self.current_queue:
-            print(song)
+            print(os.path.basename(song))
 
     def restart_player(self):
         self.player.delete()
         self.player = pyglet.media.Player()
         self.current_queue = []
-        self.current_queue = "initialized"
+        self.current_action = "initialized"
+
+    def shuffle(self):
+        queue = self.current_queue
+        random.shuffle(queue)
+        self.restart_player()
+        for song in queue:
+            self.queue_song(song)
+        self.play_music()
 
 class PlayerPrompt(Cmd):
 
@@ -54,9 +63,18 @@ class PlayerPrompt(Cmd):
         return [re.sub("\"","",p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
 
     def do_play(self, args):
-        """Start Playing Music"""
+        self.music_player.restart_player()
+        """Start Playing Music. Enter a music file name or a playlist name with this command"""
         if len(args) > 0:
-            self.music_player.queue_song(args)
+            if os.path.isfile(args):
+                self.music_player.queue_song(args)
+            else:
+                songs = self.music_library.get_playlist_songs(args)
+                for song in songs:
+                    self.music_player.queue_song("".join(song))
+        else:
+            print("Either a song or a playlist name is required")
+            return
         self.music_player.play_music()
 
     def do_pause(self, args):
@@ -86,17 +104,27 @@ class PlayerPrompt(Cmd):
 
     def do_shuffle(self, args):
         """Shuffle all songs in the Music Library"""
-        songs = self.music_library.get_all_songs()
-        random.shuffle(songs)
-        for song in songs:
-            self.music_player.queue_song(song[0])
-    
-    def do_create_playlist(self, args):
-        """Create a new playlist"""
-        self.music_library.create_playlist(args)
+        self.music_player.shuffle()
 
-    def do_add_to_playlist(self, args):
-        """Add a song to a playlist"""
-        args_list = self.split_args(args)
-        print(args_list[0], args_list[1], "are the args")
-        self.music_library.add_to_playlist(args_list[0], args_list[1])
+    def do_queue_playlist(self, args):
+        """Add a playlist you created earlier to the current queue"""
+        songs = self.music_library.get_playlist_songs(args)
+        for song in songs:
+            self.music_player.queue_song("".join(song))
+    
+    # def do_play_playlist(self, args):
+        # """Start a playlist you created earlier. Skip the songs, if any, in the current queue"""
+        # self.music_player.restart_player()
+        # songs = self.music_library.get_playlist_songs(args)
+        # for song in songs:
+            # self.music_player.queue_song("".join(song))
+
+    # def do_create_playlist(self, args):
+        # """Create a new playlist"""
+        # self.music_library.create_playlist(args)
+
+    # def do_add_to_playlist(self, args):
+        # """Add a song to a playlist"""
+        # args_list = self.split_args(args)
+        # self.music_library.add_to_playlist(args_list[0], args_list[1])
+
