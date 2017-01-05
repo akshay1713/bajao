@@ -63,18 +63,38 @@ class PlayerPrompt(Cmd):
         return [re.sub("\"","",p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
 
     def do_play(self, args):
-        self.music_player.restart_player()
         """Start Playing Music. Enter a music file name or a playlist name with this command"""
-        if len(args) > 0:
-            if os.path.isfile(args):
-                self.music_player.queue_song(args)
-            else:
-                songs = self.music_library.get_playlist_songs(args)
-                for song in songs:
-                    self.music_player.queue_song("".join(song))
-        else:
-            print("Either a song or a playlist name is required")
+        self.music_player.restart_player()
+        if len(args) == 0:
+            print("At least one song or playlist name is required")
             return
+        mp3_files = []
+        args_passed = self.split_args(args)
+
+        for arg in args_passed:
+            if os.path.isfile(arg):
+                mp3_files.append(arg)
+                continue
+            song_from_library =  self.music_library.get_song(arg)
+            if song_from_library:
+                mp3_files.append(song_from_library)
+                continue
+            songs = self.music_library.get_playlist_songs(arg)
+            if songs:
+                mp3_files = mp3_files + songs
+                continue
+            print("Invalid argument ", arg,". Couldn't find either a playlist with that name, \
+                    or a song in the music library, or in the specified path")
+
+        print("files found ", mp3_files)
+        for mp3_file in mp3_files:
+            self.music_player.queue_song(mp3_file)
+        # if os.path.isfile(args):
+            # self.music_player.queue_song(args)
+        # else:
+            # songs = self.music_library.get_playlist_songs(args)
+            # for song in songs:
+                # self.music_player.queue_song("".join(song))
         self.music_player.play_music()
 
     def do_pause(self, args):
@@ -86,7 +106,7 @@ class PlayerPrompt(Cmd):
         self.music_player.delete_player()
         sys.exit()
 
-    def do_add_songs(self, args):
+    def do_add(self, args):
         """Add songs to current player queue"""
         self.music_player.queue_song(args)
 
@@ -103,7 +123,7 @@ class PlayerPrompt(Cmd):
         self.music_player.restart_player()
 
     def do_shuffle(self, args):
-        """Shuffle all songs in the Music Library"""
+        """Shuffle all songs in the current queue"""
         self.music_player.shuffle()
 
     def do_queue_playlist(self, args):
@@ -112,19 +132,4 @@ class PlayerPrompt(Cmd):
         for song in songs:
             self.music_player.queue_song("".join(song))
     
-    # def do_play_playlist(self, args):
-        # """Start a playlist you created earlier. Skip the songs, if any, in the current queue"""
-        # self.music_player.restart_player()
-        # songs = self.music_library.get_playlist_songs(args)
-        # for song in songs:
-            # self.music_player.queue_song("".join(song))
-
-    # def do_create_playlist(self, args):
-        # """Create a new playlist"""
-        # self.music_library.create_playlist(args)
-
-    # def do_add_to_playlist(self, args):
-        # """Add a song to a playlist"""
-        # args_list = self.split_args(args)
-        # self.music_library.add_to_playlist(args_list[0], args_list[1])
 

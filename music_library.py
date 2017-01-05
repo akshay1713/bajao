@@ -8,6 +8,17 @@ class MusicLibrary():
         self.music_db = music_db
         self.conn = sqlite3.connect(self.music_db)
 
+    def get_song(self, song_name):
+        with self.conn:
+            song_details = self.conn.execute("SELECT md.directory from MusicFiles mf JOIN \
+                    MusicDirectories md  where mf.file_name = (?) and mf.directory_id = md.id", [song_name]).fetchone()
+            print(song_details)
+            if song_details is None:
+                return False
+            song_abs_path = song_details[0]+song_name 
+            print(song_abs_path)
+            return song_abs_path
+
     def add_to_library(self, directory, songs):
         song_ids = []
         with self.conn:
