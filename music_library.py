@@ -10,13 +10,12 @@ class MusicLibrary():
 
     def get_song(self, song_name):
         with self.conn:
-            song_details = self.conn.execute("SELECT md.directory from MusicFiles mf JOIN \
-                    MusicDirectories md  where mf.file_name = (?) and mf.directory_id = md.id", [song_name]).fetchone()
-            print(song_details)
+            song_details = self.conn.execute("SELECT md.directory, mf.file_name from MusicFiles mf JOIN \
+                    MusicDirectories md  where mf.file_name like ? and mf.directory_id = md.id", ['%'+song_name+'%']).fetchone()
+            print("song found is ",song_details)
             if song_details is None:
                 return False
-            song_abs_path = song_details[0]+song_name 
-            print(song_abs_path)
+            song_abs_path = song_details[0]+song_details[1] 
             return song_abs_path
 
     def add_to_library(self, directory, songs):
@@ -30,7 +29,7 @@ class MusicLibrary():
                     print("The song "+os.path.basename(abs_song_path) +" already exists in the database")
                     continue
                 unique_song_hash = song_db_details["uniqueid"]
-                song_name = abs_song_path[len(directory):len(abs_song_path)]
+                song_name = os.path.basename(abs_song_path)#abs_song_path[len(directory):len(abs_song_path)]
                 print("Adding  "+song_name+" to the Music Library")
                 cursor.execute("INSERT INTO MusicFiles(file_name, directory_id, uniqueid) values(?, ?, ?)", (song_name, song_db_details["directory_id"], unique_song_hash))
                 song_ids.append(cursor.lastrowid)
@@ -123,4 +122,7 @@ class MusicLibrary():
                 return
             songs = self.conn.execute("SELECT  md.directory, mf.file_name FROM MusicFiles mf join MusicDirectories md on mf.directory_id = md.id \
                     where mf.id IN(SELECT music_id from PlaylistFiles where playlist_id = (?))", [playlist_id[0]]).fetchall()
-            return songs
+            mp3_files = []
+            for song in songs:
+                mp3_files.append("".join(song))
+            return mp3_files
