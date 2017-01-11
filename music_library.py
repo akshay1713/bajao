@@ -12,7 +12,6 @@ class MusicLibrary():
         with self.conn:
             song_details = self.conn.execute("SELECT md.directory, mf.file_name from MusicFiles mf JOIN \
                     MusicDirectories md  where mf.file_name MATCH(?) and mf.directory_id = md.id", [song_name+'*']).fetchone()
-            print("song found is ",song_details)
             if song_details is None:
                 return False
             song_abs_path = song_details[0]+song_details[1] 

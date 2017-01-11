@@ -52,6 +52,7 @@ class MusicPlayer():
         self.current_queue = []
         self.played_queue = []
         self.manager = PlayerQueueManager(self)
+        self.repeat_status = 0
 
     def get_time(self):
         return self.player.time
@@ -67,7 +68,8 @@ class MusicPlayer():
 
     def play_music(self):
         if len(self.current_queue) == 0:
-            print("No more songs in queue") 
+            print("No more songs in queue")
+            self.player.current_action = "finished"
             return
         audio_file = self.current_queue[0]
         audio_src = pyglet.media.load(audio_file)
@@ -79,13 +81,17 @@ class MusicPlayer():
 
     def update_queue(self, update_type = "next"):
         if update_type == "next":
-            if(len(self.current_queue) == 0):
-                self.current_action = "finished"
-                return
             finished_song = self.current_queue.pop(0)
             self.played_queue.append(finished_song)
             self.player.delete()
             self.player = pyglet.media.Player()
+            if(len(self.current_queue) == 0):
+                if self.repeat_status == 0:
+                    self.current_queue = self.played_queue
+                    self.played_queue = []
+                else:
+                    self.current_action = "finished"
+                    return
         elif update_type == "prev":
             if(len(self.played_queue) == 0):
                 print("No previous songs")
@@ -105,6 +111,7 @@ class MusicPlayer():
 
     def next_song(self):
         self.set_action("next")
+        self.player.pause()
 
     def prev_song(self):
         self.set_action("prev")
@@ -127,13 +134,12 @@ class MusicPlayer():
         self.current_action = "initialized"
 
     def shuffle(self):
-        queue = self.current_queue
+        queue = self.current_queue + self.played_queue
         random.shuffle(queue)
-        self.restart_player()
-        for song in queue:
-            self.queue_song(song)
-        #print("playing from shuffle")
-        self.play_music()
+        self.current_queue = queue
+        
+    def set_repeat(self, repeat_status):
+        self.repeat_status = repeat_status
 
 class PlayerPrompt(Cmd):
 
@@ -174,7 +180,6 @@ class PlayerPrompt(Cmd):
     def do_play(self, args):
         """Start Playing Music. Enter a music file name or a playlist name with this command"""
         self.add_to_queue(args)
-        #print("playing from do_play")
         self.music_player.play_music()
 
     def do_pause(self, args):
@@ -195,10 +200,14 @@ class PlayerPrompt(Cmd):
         self.music_player.next_song()
 
     def do_prev(self, args):
+        """Play previous song in queue, skip current one"""
         self.music_player.prev_song()
 
     def do_list(self, args):
-        """List songs in current queue. Use argument 'next' to list all upcoming songs, and 'previous' to list songs which have already played"""
+        """List songs in current queue. Use argument 'next' to list all upcoming songs, and 'previous' to list songs which have already played. \
+                \nDefault is next."""
+        if args == "":
+            args = "next"
         if args not in ['next', 'previous']:
             print("Invalid argument passed. Please use 'next' to list all upcoming songs and previous to list songs which have already played")
             return
@@ -212,10 +221,9 @@ class PlayerPrompt(Cmd):
         """Shuffle all songs in the current queue"""
         self.music_player.shuffle()
 
-    def do_queue_playlist(self, args):
-        """Add a playlist you created earlier to the current queue"""
-        songs = self.music_library.get_playlist_songs(args)
-        for song in songs:
-            self.music_player.queue_song("".join(song))
-    
+    def do_repeat(self, args):
+        """Enable/Disable repeat for current queue of songs. Use '1' to enable, and '0' to disable"""
+        if args not in ["0","1"]:
+            print("Invalid argument. Please enter 1 to enable repeat, or 0 to disable repeat")
+        self.music_player.set_repeat(args)
 
