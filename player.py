@@ -1,19 +1,22 @@
 from cmd import Cmd
-import pyglet, os, sys, re, math
-import os, argparse, random, threading
+import pyglet
+import os
+import sys
+import re
+import math
+import random
+import threading
 from time import sleep
-from multiprocessing import Queue
 
-import yaml
 
 class PlayerQueueManager(object):
 
-    def __init__(self,  player, interval=1):
+    def __init__(self, player, interval=1):
         self.interval = interval
         self.player = player
 
         thread = threading.Thread(target=self.run, args=())
-        thread.daemon = True                            
+        thread.daemon = True
         thread.start()
 
     def run(self):
@@ -34,7 +37,8 @@ class PlayerQueueManager(object):
         sleep(1)
         current_action = "playing"
         while is_playing and current_action == "playing":
-            is_playing = not math.isclose(current_time, self.player.get_time(), abs_tol=0.00003)
+            is_playing = not math.isclose(
+                current_time, self.player.get_time(), abs_tol=0.00003)
             current_time = self.player.get_time()
             current_action = self.player.get_action()
             sleep(1)
@@ -79,7 +83,7 @@ class MusicPlayer():
         self.player.play()
         return
 
-    def update_queue(self, update_type = "next"):
+    def update_queue(self, update_type="next"):
         if update_type == "next":
             finished_song = self.current_queue.pop(0)
             self.played_queue.append(finished_song)
@@ -119,17 +123,20 @@ class MusicPlayer():
     def queue_song(self, audio_file):
         self.current_queue.append(audio_file)
 
-    def list(self, list_type):
+    def get_list(self, list_type):
+        songs_list = []
+        songs_queue = []
         if(list_type == "next"):
-            for song in self.current_queue:
-                print(os.path.basename(song))
+            songs_queue = self.current_queue
         elif(list_type == "previous"):
-            for song in self.played_queue:
-                print(os.path.basename(song))
+            songs_queue = self.played_queue
+        for song in songs_queue:
+            songs_list.append(os.path.basename(song))
+        return songs_list
 
     def restart_player(self):
         self.player.delete()
-        elf.player = pyglet.media.Player()
+        self.player = pyglet.media.Player()
         self.current_queue = []
         self.current_action = "initialized"
 
@@ -137,9 +144,10 @@ class MusicPlayer():
         queue = self.current_queue + self.played_queue
         random.shuffle(queue)
         self.current_queue = queue
-        
+
     def set_repeat(self, repeat_status):
         self.repeat_status = repeat_status
+
 
 class PlayerPrompt(Cmd):
 
@@ -149,11 +157,11 @@ class PlayerPrompt(Cmd):
         self.music_library = music_library
 
     def split_args(self, args):
-        return [re.sub("\"","",p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
+        return [re.sub("\"", "", p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
 
     def add_to_queue(self, args):
         current_queue = self.music_player.get_queue()
-        
+
         if len(args) == 0 and len(current_queue) == 0:
             return
         mp3_files = []
@@ -163,7 +171,7 @@ class PlayerPrompt(Cmd):
             if os.path.isfile(arg):
                 mp3_files.append(arg)
                 continue
-            song_from_library =  self.music_library.get_song(arg)
+            song_from_library = self.music_library.get_song(arg)
             if song_from_library:
                 mp3_files.append(song_from_library)
                 continue
@@ -171,14 +179,15 @@ class PlayerPrompt(Cmd):
             if songs:
                 mp3_files = mp3_files + songs
                 continue
-            print("Invalid argument ", arg,". Couldn't find either a playlist with that name, \
+            print("Invalid argument ", arg, ". Couldn't find either a playlist with that name, \
                     or a song in the music library, or in the specified path")
 
         for mp3_file in mp3_files:
             self.music_player.queue_song(mp3_file)
 
     def do_play(self, args):
-        """Start Playing Music. Enter a music file name or a playlist name with this command"""
+        """Start Playing Music.\
+        Enter a music file name or a playlist name with this command"""
         self.add_to_queue(args)
         self.music_player.play_music()
 
@@ -204,14 +213,27 @@ class PlayerPrompt(Cmd):
         self.music_player.prev_song()
 
     def do_list(self, args):
-        """List songs in current queue. Use argument 'next' to list all upcoming songs, and 'previous' to list songs which have already played. \
-                \nDefault is next."""
+        """List songs in current queue. Use argument 'next' to list all upcoming songs, \
+                and 'previous' to list songs which have already played. \nDefault is next."""
         if args == "":
             args = "next"
         if args not in ['next', 'previous']:
             print("Invalid argument passed. Please use 'next' to list all upcoming songs and previous to list songs which have already played")
             return
-        self.music_player.list(args)
+        songs_list = self.music_player.get_list(args)
+        if songs_list is None:
+            print("No songs in queue")
+            return
+        for index, song in enumerate(songs_list):
+            print(song)
+
+    def complete_list(self, text, line, start_index, end_index):
+        commands = ["next", "previous"]
+        if text:
+            return [command for command in commands
+                    if command.startswith(text)]
+        else:
+            return commands
 
     def do_delete_queue(self, args):
         """Delete current queue, so you can create a new one"""
@@ -223,7 +245,7 @@ class PlayerPrompt(Cmd):
 
     def do_repeat(self, args):
         """Enable/Disable repeat for current queue of songs. Use '1' to enable, and '0' to disable"""
-        if args not in ["0","1"]:
-            print("Invalid argument. Please enter 1 to enable repeat, or 0 to disable repeat")
+        if args not in ["0", "1"]:
+            print(
+                "Invalid argument. Please enter 1 to enable repeat, or 0 to disable repeat")
         self.music_player.set_repeat(args)
-
