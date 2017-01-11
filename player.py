@@ -155,6 +155,7 @@ class PlayerPrompt(Cmd):
         super(PlayerPrompt, self).__init__()
         self.music_player = music_player
         self.music_library = music_library
+        self.song_names = []
 
     def split_args(self, args):
         return [re.sub("\"", "", p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
@@ -184,6 +185,7 @@ class PlayerPrompt(Cmd):
 
         for mp3_file in mp3_files:
             self.music_player.queue_song(mp3_file)
+            self.song_names.append(os.path.basename(mp3_file))
 
     def do_play(self, args):
         """Start Playing Music.\

@@ -1,8 +1,5 @@
 import sqlite3
 import os
-import sys
-import argparse
-import yaml
 import hashlib
 
 
@@ -103,7 +100,7 @@ class MusicLibrary():
             cursor = self.conn.cursor()
             music_id = playlist_entry_details["song_id"]
             playlist_id = playlist_entry_details["playlist_id"]
-            playlist_res = cursor.execute(
+            cursor.execute(
                 "INSERT INTO PlaylistFiles(music_id, playlist_id) values(?,?)", (music_id, playlist_id))
             print("Added ", song_name, "to playlist ", playlist_name)
 
