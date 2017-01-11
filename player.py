@@ -155,7 +155,13 @@ class PlayerPrompt(Cmd):
         super(PlayerPrompt, self).__init__()
         self.music_player = music_player
         self.music_library = music_library
-        self.song_names = []
+        self.current_song_names = []
+        self.all_song_names = self.music_library.get_all_songs()
+        self.playlist_names = self.music_library.get_all_playlists()
+        for index, name in enumerate(self.all_song_names):
+            self.all_song_names[index] = name.replace(" ", "_")
+        for name in self.playlist_names:
+            name = name.replace(" ", "_")
 
     def split_args(self, args):
         return [re.sub("\"", "", p) for p in re.split("( |\\\".*?\\\"|'.*?')", args) if p.strip()]
@@ -185,13 +191,20 @@ class PlayerPrompt(Cmd):
 
         for mp3_file in mp3_files:
             self.music_player.queue_song(mp3_file)
-            self.song_names.append(os.path.basename(mp3_file))
+            self.current_song_names.append(os.path.basename(mp3_file))
 
     def do_play(self, args):
         """Start Playing Music.\
         Enter a music file name or a playlist name with this command"""
         self.add_to_queue(args)
         self.music_player.play_music()
+
+    def complete_play(self, text, line, start_index, end_index):
+        names = self.all_song_names + self.playlist_names
+        if text:
+            return [name for name in names if name.startswith(text)]
+        else:
+            return names
 
     def do_pause(self, args):
         """Pause current song"""
@@ -205,6 +218,13 @@ class PlayerPrompt(Cmd):
     def do_add(self, args):
         """Add songs to current player queue"""
         self.add_to_queue(args)
+
+    def complete_add(self, text, line, start_index, end_index):
+        names = self.all_song_names + self.playlist_names
+        if text:
+            return [name for name in names if name.startswith(text)]
+        else:
+            return names
 
     def do_next(self, args):
         """Play next song in queue, skip current one"""
@@ -227,7 +247,7 @@ class PlayerPrompt(Cmd):
             print("No songs in queue")
             return
         for index, song in enumerate(songs_list):
-            print(song)
+            print(str(index) + " - " + str(song))
 
     def complete_list(self, text, line, start_index, end_index):
         commands = ["next", "previous"]

@@ -31,7 +31,6 @@ class MusicLibrary():
                           " already exists in the database")
                     continue
                 unique_song_hash = song_db_details["uniqueid"]
-                # abs_song_path[len(directory):len(abs_song_path)]
                 song_name = os.path.basename(abs_song_path)
                 print("Adding  " + song_name + " to the Music Library")
                 cursor.execute("INSERT INTO MusicFiles(file_name, directory_id, uniqueid) values(?, ?, ?)", (
@@ -74,8 +73,13 @@ class MusicLibrary():
     def get_all_songs(self):
         with self.conn:
             songs = self.conn.execute(
-                "SELECT file_name from MusicFiles ORDER BY id ASC").fetchall()
-            return songs
+                "SELECT file_name from MusicFiles ORDER BY rowid ASC").fetchall()
+        return [s[0] for s in songs]
+
+    def get_all_playlists(self):
+        with self.conn:
+            playlists = self.conn.execute("SELECT playlist_name from Playlists ORDER BY id ASC").fetchall()
+        return [p[0] for p in playlists]
 
     def create_playlist(self, playlist_name):
         with self.conn:
@@ -139,7 +143,6 @@ class MusicLibrary():
         with self.conn:
             playlist_id = self.conn.execute(
                 "SELECT id from Playlists where playlist_name = (?)", [playlist_name]).fetchone()
-            print("playlist id is ", playlist_id)
             if not playlist_id:
                 print("Playlist named ", playlist_name,
                       " not found. Please create it")
