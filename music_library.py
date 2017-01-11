@@ -11,7 +11,7 @@ class MusicLibrary():
     def get_song(self, song_name):
         with self.conn:
             song_details = self.conn.execute("SELECT md.directory, mf.file_name from MusicFiles mf JOIN \
-                    MusicDirectories md  where mf.file_name like ? and mf.directory_id = md.id", ['%'+song_name+'%']).fetchone()
+                    MusicDirectories md  where mf.file_name MATCH(?) and mf.directory_id = md.id", [song_name+'*']).fetchone()
             print("song found is ",song_details)
             if song_details is None:
                 return False
@@ -102,7 +102,7 @@ class MusicLibrary():
                 playlist_entry_details["playlist_id"] = self.create_playlist(playlist_name)
             else:
                 playlist_entry_details["playlist_id"] = playlist_details[0]
-            song_details = self.conn.execute("SELECT * from MusicFiles where file_name = (?)", [base_song_name]).fetchone()
+            song_details = self.conn.execute("SELECT rowid from MusicFiles where file_name = (?)", [base_song_name]).fetchone()
             if song_details is None:
                 if not os.path.isfile(song_name):
                     print("song ", song_name, "not found in either the music library or the path specified.")
@@ -117,11 +117,12 @@ class MusicLibrary():
     def get_playlist_songs(self, playlist_name):
         with self.conn:
             playlist_id = self.conn.execute("SELECT id from Playlists where playlist_name = (?)", [playlist_name]).fetchone()
+            print("playlist id is ", playlist_id)
             if not playlist_id:
                 print("Playlist named ", playlist_name," not found. Please create it")
                 return
             songs = self.conn.execute("SELECT  md.directory, mf.file_name FROM MusicFiles mf join MusicDirectories md on mf.directory_id = md.id \
-                    where mf.id IN(SELECT music_id from PlaylistFiles where playlist_id = (?))", [playlist_id[0]]).fetchall()
+                    where mf.rowid IN(SELECT music_id from PlaylistFiles where playlist_id = (?))", [playlist_id[0]]).fetchall()
             mp3_files = []
             for song in songs:
                 mp3_files.append("".join(song))

@@ -162,7 +162,6 @@ class PlayerPrompt(Cmd):
                 mp3_files.append(song_from_library)
                 continue
             songs = self.music_library.get_playlist_songs(arg)
-            #print("playlist songs are ",songs)
             if songs:
                 mp3_files = mp3_files + songs
                 continue
