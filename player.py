@@ -46,7 +46,6 @@ class PlayerQueueManager(object):
             self.player.set_action("next")
         return
 
-
 class MusicPlayer():
 
     def __init__(self, action):
@@ -134,6 +133,9 @@ class MusicPlayer():
             songs_list.append(os.path.basename(song))
         return songs_list
 
+    def get_queue_length(self):
+        return len(self.current_queue)
+
     def restart_player(self):
         self.player.delete()
         self.player = pyglet.media.Player()
@@ -145,8 +147,24 @@ class MusicPlayer():
         random.shuffle(queue)
         self.current_queue = queue
 
+    def move_song(self, current_position, desired_position):
+        song = self.current_queue.pop(current_position)
+        self.current_queue.insert(desired_position, song)
+
     def set_repeat(self, repeat_status):
         self.repeat_status = repeat_status
+
+    def loop(self, indexes):
+        loop_songs = []
+        for index in indexes:
+            loop_songs.append(self.current_queue.pop(index))
+        if len(loop_songs) == 0:
+            loop_songs.append(self.current_queue.pop(0))
+        self.restart_player()
+        self.current_queue = loop_songs
+        self.repeat_status = 1
+        self.current_queue = loop_songs
+        self.play_music()
 
 
 class PlayerPrompt(Cmd):
@@ -271,3 +289,35 @@ class PlayerPrompt(Cmd):
             print(
                 "Invalid argument. Please enter 1 to enable repeat, or 0 to disable repeat")
         self.music_player.set_repeat(args)
+
+    def do_move(self, args):
+        """Move song at position x to position y"""
+        queue_length = self.music_player.get_queue_length()
+        args_array = args.split()
+        if len(args_array) is not 2:
+            print("Please enter 2 values, one for the current song position and one for the desired song position")
+            return
+        current_position = int(args_array[0])
+        desired_position = int(args_array[1])
+        if not current_position in range(0, queue_length-1):
+            print("Value for current position is out of bounds. Please enter a valid value")
+            return
+        if not desired_position in range(0, queue_length-1):
+            print("Value for desired position is out of bounds. Please enter a valid value")
+            return
+        self.music_player.move_song(current_position, desired_position)
+
+    def do_loop(self, args):
+        """Loop the songs at the given indexes. Defaults to looping current song if no index is provided"""
+        args_array = args.split()
+        queue_length = self.music_player.get_queue_length()
+        indexes = []
+        for arg in args_array:
+            if  int(arg) not in range(0, queue_length-1):
+                print("invalid index ",arg)
+                return
+            if int(arg) not in indexes:
+                indexes.append(int(arg))
+        # print("looping ",indexes)
+        self.music_player.loop(indexes)
+
