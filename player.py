@@ -74,10 +74,11 @@ class MusicPlayer():
             print("No more songs in queue")
             self.player.current_action = "finished"
             return
-        audio_file = self.current_queue[0]
-        audio_src = pyglet.media.load(audio_file)
-        self.current_duration = audio_src.duration
-        self.player.queue(audio_src)
+        if self.current_action is not "paused":
+            audio_file = self.current_queue[0]
+            audio_src = pyglet.media.load(audio_file)
+            self.current_duration = audio_src.duration
+            self.player.queue(audio_src)
         self.current_action = "playing"
         self.player.play()
         return
